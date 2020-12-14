@@ -1,7 +1,6 @@
 import 'reflect-metadata'
 import { injectable, inject } from 'tsyringe'
 
-// import User from '@modules/users/infra/typeorm/entities/User'
 import AppError from '@shared/errors/AppError'
 import IUserRepository from '@modules/users/repositories/IUserRepository'
 import IUserTokensRepository from '@modules/users/repositories/IUserTokensRepository'
@@ -31,9 +30,22 @@ class SendForgotPasswordEmailService {
       throw new AppError('User does not exists')
     }
 
-    await this.userTokensRepository.generate(user.id)
+    const { token } = await this.userTokensRepository.generate(user.id)
 
-    this.mailProvider.sendMail(email, 'this is an email')
+    await this.mailProvider.sendMail({
+      to: {
+        name: user.name,
+        email: user.email,
+      },
+      subject: 'Recuperação de senhas (GoBarber)',
+      templateData: {
+        template: 'Olá, {{name}}: {{token}}',
+        variables: {
+          name: user.name,
+          token,
+        },
+      },
+    })
   }
 }
 
