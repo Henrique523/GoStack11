@@ -3,7 +3,7 @@ import { injectable, inject } from 'tsyringe'
 import IUsersRepository from '@modules/users/repositories/IUserRepository'
 import User from '@modules/users/infra/typeorm/entities/User'
 
-interface IRequestDTO {
+interface IRequest {
   user_id: string
 }
 
@@ -14,7 +14,7 @@ export default class ListProvidersService {
     private usersRepository: IUsersRepository
   ) {}
 
-  public async execute({ user_id }: IRequestDTO): Promise<User[]> {
+  public async execute({ user_id }: IRequest): Promise<User[]> {
     const users = await this.usersRepository.findAllProviders({ except_user_id: user_id })
 
     return users
