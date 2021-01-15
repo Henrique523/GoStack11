@@ -1,14 +1,17 @@
 import FakeAppointmentsRepository from '../repositories/fakes/FakeAppointmentsRepository'
 import CreateAppointmentService from './CreateAppointmentService'
+import FakeNotificationRepository from '@modules/notifications/repositories/fakes/FakeNotificationsRepository'
 import AppError from '@shared/errors/AppError'
 
 let fakeAppointmentsRepository: FakeAppointmentsRepository
 let createAppointment: CreateAppointmentService
+let fakeNotificationRepository: FakeNotificationRepository
 
 describe('CreateAppointment', () => {
   beforeEach(() => {
     fakeAppointmentsRepository = new FakeAppointmentsRepository()
-    createAppointment = new CreateAppointmentService(fakeAppointmentsRepository)
+    fakeNotificationRepository = new FakeNotificationRepository()
+    createAppointment = new CreateAppointmentService(fakeAppointmentsRepository, fakeNotificationRepository)
   })
 
   it('should be able to create a new appointment', async () => {
@@ -27,16 +30,40 @@ describe('CreateAppointment', () => {
   })
 
   it('should not be able to create two appointments on the same date', async () => {
+    const appointmentDate = new Date(2020, 4, 10, 11)
+
+    jest.spyOn(Date, 'now').mockImplementationOnce(() => {
+      return new Date(2020, 4, 10, 10).getTime()
+    })
+
+    await createAppointment.execute({ date: appointmentDate, user_id: 'user-id', provider_id: 'provider-id' })
+
+    jest.spyOn(Date, 'now').mockImplementationOnce(() => {
+      return new Date(2020, 4, 10, 10).getTime()
+    })
+
+    await expect(
+      createAppointment.execute({ date: appointmentDate, user_id: 'user-id', provider_id: 'provider-id' })
+    ).rejects.toBeInstanceOf(AppError)
+  })
+
+  it('shouldn`t be able to repeat an appointment', async () => {
     jest.spyOn(Date, 'now').mockImplementationOnce(() => {
       return new Date(2020, 4, 10, 12).getTime()
     })
 
-    const appointmentDate = new Date(2020, 4, 10, 13)
-
-    await createAppointment.execute({ date: appointmentDate, user_id: '123123', provider_id: '123123123' })
+    await createAppointment.execute({
+      date: new Date(2020, 4, 10, 13),
+      user_id: '123456',
+      provider_id: '123123123',
+    })
 
     await expect(
-      createAppointment.execute({ date: appointmentDate, user_id: '123123', provider_id: '123123123' })
+      createAppointment.execute({
+        date: new Date(2020, 4, 10, 13),
+        user_id: '123123',
+        provider_id: '123123123',
+      })
     ).rejects.toBeInstanceOf(AppError)
   })
 
