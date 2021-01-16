@@ -1,5 +1,7 @@
 /* eslint-disable camelcase */
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm'
+import { Exclude, Expose } from 'class-transformer'
+import uploadConfig from '@config/upload'
 
 @Entity('users')
 class User {
@@ -13,6 +15,7 @@ class User {
   email: string
 
   @Column()
+  @Exclude()
   password: string
 
   @Column()
@@ -23,6 +26,22 @@ class User {
 
   @UpdateDateColumn()
   updated_at: Date
+
+  @Expose({ name: 'avatar_url' })
+  getAvatarUrl(): string | null {
+    if (!this.avatar) {
+      return null
+    }
+
+    switch (uploadConfig.driver) {
+      case 'disk':
+        return this.avatar ? `${process.env.APP_API_URL}/files/${this.avatar}` : null
+      case 's3':
+        return `https://${uploadConfig.config.aws.bucket}.s3.amazonaws.com/${this.avatar}`
+      default:
+        return null
+    }
+  }
 }
 
 export default User

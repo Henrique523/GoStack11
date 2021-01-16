@@ -1,15 +1,8 @@
 import { Request, Response } from 'express'
 import { container } from 'tsyringe'
+import { classToClass } from 'class-transformer'
 
 import AuthenticateUserService from '@modules/users/services/AuthenticateUserService'
-
-interface UserOnlyIdNameAndEmail {
-  id: string
-  email: string
-  password?: string
-  created_at?: Date
-  updated_at?: Date
-}
 
 export default class SessionsController {
   public async create(request: Request, response: Response): Promise<Response> {
@@ -19,12 +12,6 @@ export default class SessionsController {
 
     const { user, token } = await authenticateUser.execute({ email, password })
 
-    const userOnlyIdNameAndEmail: UserOnlyIdNameAndEmail = Object.assign({}, user)
-
-    delete userOnlyIdNameAndEmail.created_at
-    delete userOnlyIdNameAndEmail.updated_at
-    delete userOnlyIdNameAndEmail.password
-
-    return response.json({ userOnlyIdNameAndEmail, token })
+    return response.json({ user: classToClass(user), token })
   }
 }
