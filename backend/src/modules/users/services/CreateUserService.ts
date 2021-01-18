@@ -2,10 +2,12 @@ import 'reflect-metadata'
 import { injectable, inject } from 'tsyringe'
 
 import User from '@modules/users/infra/typeorm/entities/User'
+
 import AppError from '@shared/errors/AppError'
+
 import IUserRepository from '@modules/users/repositories/IUserRepository'
 import IHashProvider from '@modules/users/providers/HashProvider/models/IHashProvider'
-
+import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider'
 interface IRequest {
   name: string
   email: string
@@ -17,8 +19,12 @@ class CreateUserService {
   constructor(
     @inject('UsersRepository')
     private usersRepository: IUserRepository,
+
     @inject('HashProvider')
-    private hashProvider: IHashProvider
+    private hashProvider: IHashProvider,
+
+    @inject('CacheProvider')
+    private cacheProvider: ICacheProvider
   ) {}
 
   public async execute({ name, email, password }: IRequest): Promise<User> {
@@ -35,6 +41,8 @@ class CreateUserService {
       email,
       password: hashedPassword,
     })
+
+    await this.cacheProvider.invalidatePrefix('provider-list')
 
     return user
   }
