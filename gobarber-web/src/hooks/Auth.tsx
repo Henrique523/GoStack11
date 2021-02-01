@@ -1,20 +1,27 @@
 import React, { createContext, useCallback, useState, useContext } from 'react'
 import api from '../services/apiClient'
 
+interface User {
+  id: string
+  avatar_url: string
+  name: string
+  email: string
+}
+
+interface AuthState {
+  token: string
+  user: User
+}
 interface SignInCredentials {
   email: string
   password: string
 }
 
 interface AuthContextData {
-  user: object
+  user: User
   signIn(credentials: SignInCredentials): Promise<void>
   signOut(): void
-}
-
-interface AuthState {
-  token: string
-  user: object
+  updateUser(user: User): void
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData)
@@ -25,6 +32,7 @@ export const AuthProvider: React.FC = ({ children }) => {
     const user = localStorage.getItem('@GoBarber:user')
 
     if (token && user) {
+      api.defaults.headers.authorization = `Bearer ${token}`
       return { token, user: JSON.parse(user) }
     }
 
@@ -36,12 +44,14 @@ export const AuthProvider: React.FC = ({ children }) => {
       email,
       password,
     })
-    const { token, userOnlyIdNameAndEmail } = response.data
+    const { token, user } = response.data
 
     localStorage.setItem('@GoBarber:token', token)
-    localStorage.setItem('@GoBarber:user', JSON.stringify(userOnlyIdNameAndEmail))
+    localStorage.setItem('@GoBarber:user', JSON.stringify(user))
 
-    setData({ token, user: userOnlyIdNameAndEmail })
+    api.defaults.headers.authorization = `Bearer ${token}`
+
+    setData({ token, user })
   }, [])
 
   const signOut = useCallback(() => {
@@ -51,7 +61,20 @@ export const AuthProvider: React.FC = ({ children }) => {
     setData({} as AuthState)
   }, [])
 
-  return <AuthContext.Provider value={{ user: data.user, signIn, signOut }}>{children}</AuthContext.Provider>
+  const updateUser = useCallback(
+    (user: User) => {
+      localStorage.setItem('@GoBarber:user', JSON.stringify(user))
+      setData({
+        token: data.token,
+        user,
+      })
+    },
+    [data.token]
+  )
+
+  return (
+    <AuthContext.Provider value={{ user: data.user, signIn, signOut, updateUser }}>{children}</AuthContext.Provider>
+  )
 }
 
 export function useAuth(): AuthContextData {

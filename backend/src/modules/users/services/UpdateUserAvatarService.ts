@@ -16,8 +16,8 @@ class UpdateUserAvatarService {
   constructor(
     @inject('UsersRepository')
     private usersRepository: IUserRepository,
-    @inject('DiskStorageProvider')
-    private diskStorageProvider: IStorageProvider
+    @inject('StorageProvider')
+    private storageProvider: IStorageProvider
   ) {}
 
   public async execute({ user_id, avatarFilename }: IRequest): Promise<User> {
@@ -28,10 +28,10 @@ class UpdateUserAvatarService {
     }
 
     if (user.avatar) {
-      await this.diskStorageProvider.deleteFile(user.avatar)
+      await this.storageProvider.deleteFile(user.avatar)
     }
 
-    const filename = await this.diskStorageProvider.saveFile(avatarFilename)
+    const filename = await this.storageProvider.saveFile(avatarFilename)
 
     user.avatar = filename
     await this.usersRepository.save(user)
