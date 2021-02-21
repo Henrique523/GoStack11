@@ -7,6 +7,10 @@ interface InputProps {
   isErrored: boolean
 }
 
+interface IconProps {
+  isErrored?: boolean
+}
+
 export const Container = styled.View<Omit<InputProps, 'isFilled'>>`
   width: 100%;
   height: 60px;
@@ -40,7 +44,7 @@ export const TextInput = styled.TextInput`
   font-family: 'RobotoSlab-Regular';
 `
 
-export const Icon = styled(FeatherIcon)<InputProps>`
+export const Icon = styled(FeatherIcon)<IconProps>`
   margin-right: 16px;
 
   ${props =>
